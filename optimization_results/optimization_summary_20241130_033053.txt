@@ -1,0 +1,52 @@
+Strategy Optimization Results Summary
+===================================
+
+Overall Statistics:
+-----------------
+Total Strategies Tested: 16
+Best Total Return: 7.88%
+Average Total Return: 7.88%
+Best Sharpe Ratio: 1.94
+Average Sharpe Ratio: 1.94
+Best Win Rate: 100.00%
+Average Win Rate: 100.00%
+
+Top Strategies by Total Return:
+TrendVolumeStrategy on BTCUSDT 1d: 7.88%
+TrendVolumeStrategy on BTCUSDT 1d: 7.88%
+TrendVolumeStrategy on BTCUSDT 1d: 7.88%
+TrendVolumeStrategy on BTCUSDT 1d: 7.88%
+TrendVolumeStrategy on BTCUSDT 1d: 7.88%
+
+Top Strategies by Sharpe Ratio:
+TrendVolumeStrategy on BTCUSDT 1d: 1.94
+TrendVolumeStrategy on BTCUSDT 1d: 1.94
+TrendVolumeStrategy on BTCUSDT 1d: 1.94
+TrendVolumeStrategy on BTCUSDT 1d: 1.94
+TrendVolumeStrategy on BTCUSDT 1d: 1.94
+
+Top Strategies by Win Rate:
+TrendVolumeStrategy on BTCUSDT 1d: 100.00%
+TrendVolumeStrategy on BTCUSDT 1d: 100.00%
+TrendVolumeStrategy on BTCUSDT 1d: 100.00%
+TrendVolumeStrategy on BTCUSDT 1d: 100.00%
+TrendVolumeStrategy on BTCUSDT 1d: 100.00%
+
+Strategy-specific Performance:
+
+TrendVolumeStrategy:
+Average Return: 7.88%
+Average Sharpe: 1.94
+Average Win Rate: 100.00%
+
+Trading Pair Performance:
+
+BTCUSDT:
+Average Return: 7.88%
+Best Strategy: TrendVolumeStrategy
+
+Timeframe Performance:
+
+1d:
+Average Return: 7.88%
+Best Strategy: TrendVolumeStrategy

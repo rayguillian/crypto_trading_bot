@@ -1,0 +1,51 @@
+trading:
+  mode: paper  # paper/live
+  initial_capital: 10000
+  commission: 0.001  # 0.1%
+  
+risk_management:
+  max_position_size: 0.02  # 2% per trade
+  max_drawdown: 0.05  # 5%
+  risk_per_trade: 0.01  # 1%
+  vol_lookback: 20
+  vol_z_score: 2.0
+  correlation_threshold: 0.7
+  
+strategy:
+  default: rsi_macd
+  timeframe: 4h
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    
+optimization:
+  training_days: 30
+  test_days: 10
+  min_trades: 10
+  min_win_rate: 0.55
+  min_profit: 0.05  # 5%
+  max_drawdown: 0.25  # 25%
+  min_sharpe: 1.2
+  
+logging:
+  level: INFO
+  file: crypto_trading_bot.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  datefmt: '%Y-%m-%d %H:%M:%S'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      level: INFO
+      formatter: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      stream: ext://sys.stdout
+    file:
+      class: logging.FileHandler
+      level: INFO
+      formatter: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      filename: crypto_trading_bot.log
+      mode: w
+
+ai:
+  model: gpt-4
+  temperature: 0.7
+  max_tokens: 1000

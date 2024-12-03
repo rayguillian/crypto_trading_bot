@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading Bot</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .strategy-card {
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        .strategy-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .timeframe-badge {
+            margin-right: 5px;
+        }
+        .card-footer {
+            background-color: transparent;
+        }
+        .trades-container {
+            margin-top: 30px;
+            overflow-x: auto;
+        }
+        .table-responsive {
+            margin-top: 20px;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .strategy-card {
+                margin-bottom: 15px;
+            }
+            .table-responsive {
+                font-size: 14px;
+            }
+        }
+        
+        .metric-card {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card h6 {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-card p {
+            font-weight: 600;
+        }
+        
+        .text-success {
+            color: #28a745 !important;
+        }
+        
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        
+        .text-warning {
+            color: #ffc107 !important;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Crypto Trading Bot</a>
+            <div class="d-flex align-items-center">
+                <span class="text-light me-2">Status:</span>
+                <span id="connection-status" class="text-warning">Connecting...</span>
+            </div>
+            <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#evaluationModal">
+                <i class="bi bi-graph-up"></i> Evaluate Strategies
+            </button>
+            <button class="btn btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#strategyModal">
+                <i class="bi bi-plus-circle"></i> New Strategy
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Market Data Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Real-Time Market Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="marketData">
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>BTC/USDT</h6>
+                                        <p class="h4 mb-0" id="btc_price">Loading...</p>
+                                        <p class="mb-0" id="btc_change"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>ETH/USDT</h6>
+                                        <p class="h4 mb-0" id="eth_price">Loading...</p>
+                                        <p class="mb-0" id="eth_change"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>SOL/USDT</h6>
+                                        <p class="h4 mb-0" id="sol_price">Loading...</p>
+                                        <p class="mb-0" id="sol_change"></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>ADA/USDT</h6>
+                                        <p class="h4 mb-0" id="ada_price">Loading...</p>
+                                        <p class="mb-0" id="ada_change"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="starred-tab" data-bs-toggle="tab" data-bs-target="#starred" type="button" role="tab">
+                    <i class="bi bi-star-fill text-warning me-2"></i>Starred Strategies
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="strategies-tab" data-bs-toggle="tab" data-bs-target="#strategies" type="button" role="tab">
+                    <i class="bi bi-grid me-2"></i>All Strategies
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="trades-tab" data-bs-toggle="tab" data-bs-target="#trades" type="button" role="tab">
+                    <i class="bi bi-graph-up me-2"></i>Positions & Trades
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Starred Strategies Tab -->
+            <div class="tab-pane fade show active" id="starred" role="tabpanel">
+                <div class="row g-4" id="starred-strategies-container">
+                    <!-- Starred strategies will be loaded here -->
+                </div>
+            </div>
+
+            <!-- All Strategies Tab -->
+            <div class="tab-pane fade" id="strategies" role="tabpanel">
+                <div class="row g-4" id="strategies-container">
+                    <!-- Strategies will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Trades Tab -->
+            <div class="tab-pane fade" id="trades" role="tabpanel">
+                <div class="trades-container">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-list-task me-2"></i>
+                                Active Positions & Recent Trades
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Strategy</th>
+                                            <th>Symbol</th>
+                                            <th>Side</th>
+                                            <th>Entry Price</th>
+                                            <th>Current/Exit Price</th>
+                                            <th>Quantity</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Entry Time</th>
+                                            <th>Exit Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="trades-container">
+                                        <!-- Trades will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Modal -->
+    <div class="modal fade" id="strategyModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Strategy</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Progress Bar -->
+                    <div class="progress mb-4">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <!-- Step 1: Basic Configuration -->
+                    <div class="step-content" id="step1">
+                        <h6>Basic Configuration</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Strategy Name</label>
+                            <input type="text" class="form-control" id="strategyName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Strategy Type</label>
+                            <select class="form-select" id="strategyType">
+                                <option value="Momentum">Momentum</option>
+                                <option value="MeanReversion">Mean Reversion</option>
+                                <option value="Breakout">Breakout</option>
+                                <option value="ML">Machine Learning</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Trading Pair</label>
+                            <select class="form-select" id="tradingPair">
+                                <option value="BTCUSDT">BTC/USDT</option>
+                                <option value="ETHUSDT">ETH/USDT</option>
+                                <option value="SOLUSDT">SOL/USDT</option>
+                                <option value="ADAUSDT">ADA/USDT</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Timeframe</label>
+                            <select class="form-select" id="timeframe">
+                                <option value="1m">1 minute</option>
+                                <option value="5m">5 minutes</option>
+                                <option value="15m">15 minutes</option>
+                                <option value="1h">1 hour</option>
+                                <option value="4h">4 hours</option>
+                                <option value="1d">1 day</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Strategy Parameters -->
+                    <div class="step-content d-none" id="step2">
+                        <h6>Strategy Parameters</h6>
+                        <div id="strategyParams">
+                            <!-- Dynamically populated based on strategy type -->
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lookback Period (days)</label>
+                            <input type="number" class="form-control" id="lookbackDays" value="30" min="1" max="365">
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Backtesting Results -->
+                    <div class="step-content d-none" id="step3">
+                        <h6>Backtesting Results</h6>
+                        <div id="backtestResults" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Performance Metrics</h6>
+                                    <div id="performanceMetrics"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Trade Statistics</h6>
+                                    <div id="tradeStats"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center" id="backtestSpinner">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p>Running backtest...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Live Trading Setup -->
+                    <div class="step-content d-none" id="step4">
+                        <h6>Live Trading Setup</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Initial Capital (USDT)</label>
+                            <input type="number" class="form-control" id="initialCapital" value="1000" min="100">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Risk Per Trade (%)</label>
+                            <input type="number" class="form-control" id="riskPerTrade" value="1" min="0.1" max="5" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Stop Loss Type</label>
+                            <select class="form-select" id="stopLossType">
+                                <option value="fixed">Fixed</option>
+                                <option value="trailing">Trailing</option>
+                                <option value="atr">ATR-based</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="previousStep()">Previous</button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">Next</button>
+                    <button type="button" class="btn btn-success d-none" id="finishButton" onclick="finishStrategyDevelopment()">Start Trading</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script>
+        // Define API base URL
+        const API_BASE_URL = window.location.origin;
+        
+        // Initialize Socket.IO connection
+        const socket = io({
+            transports: ['websocket'],
+            upgrade: false
+        });
+
+        // Socket connection handlers
+        socket.on('connect', () => {
+            console.log('Connected to WebSocket');
+            updateConnectionStatus('Connected');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from WebSocket');
+            updateConnectionStatus('Disconnected');
+        });
+
+        socket.on('connection_status', (data) => {
+            console.log('Connection status:', data);
+            updateConnectionStatus(data.status);
+            if (data.status === 'error') {
+                console.error('Connection error:', data.message);
+            }
+        });
+
+        socket.on('market_update', (data) => {
+            try {
+                if (data.e === 'error') {
+                    console.error('Market data error:', data.m);
+                    return;
+                }
+                
+                // Update market data in the UI
+                const symbol = data.s;
+                const price = parseFloat(data.c);
+                const priceChange = parseFloat(data.p);
+                const priceChangePercent = parseFloat(data.P);
+                
+                // Update price display
+                const priceElement = document.querySelector(`#${symbol.toLowerCase()}_price`);
+                if (priceElement) {
+                    priceElement.textContent = formatCurrency(price);
+                    
+                    // Add color based on price change
+                    if (priceChange > 0) {
+                        priceElement.classList.remove('text-danger');
+                        priceElement.classList.add('text-success');
+                    } else if (priceChange < 0) {
+                        priceElement.classList.remove('text-success');
+                        priceElement.classList.add('text-danger');
+                    }
+                }
+                
+                // Update 24h change
+                const changeElement = document.querySelector(`#${symbol.toLowerCase()}_change`);
+                if (changeElement) {
+                    changeElement.textContent = `${priceChangePercent > 0 ? '+' : ''}${priceChangePercent.toFixed(2)}%`;
+                    changeElement.classList.toggle('text-success', priceChangePercent > 0);
+                    changeElement.classList.toggle('text-danger', priceChangePercent < 0);
+                }
+            } catch (error) {
+                console.error('Error processing market update:', error);
+            }
+        });
+
+        socket.on('performance_update', (data) => {
+            try {
+                updatePerformanceMetrics(data);
+            } catch (error) {
+                console.error('Error updating performance metrics:', error);
+                showError('Failed to update performance metrics');
+            }
+        });
+
+        socket.on('strategy_evaluation_result', (data) => {
+            try {
+                // Hide loading spinner
+                document.getElementById('evaluationSpinner').style.display = 'none';
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                // Update metrics
+                updatePerformanceMetrics(data.metrics);
+                
+                // Show success message
+                showSuccess('Strategy evaluation completed successfully');
+                
+                // Update strategy recommendation if available
+                if (data.recommendation) {
+                    const recommendationElement = document.getElementById('strategy-recommendation');
+                    if (recommendationElement) {
+                        recommendationElement.textContent = data.recommendation;
+                        recommendationElement.style.display = 'block';
+                    }
+                }
+                
+                // Enable evaluation button
+                document.getElementById('evaluateButton').disabled = false;
+                
+            } catch (error) {
+                console.error('Error processing evaluation result:', error);
+                showError('Failed to process strategy evaluation results');
+            }
+        });
+
+        function updatePerformanceMetrics(data) {
+            // Update total return
+            const totalReturnElement = document.getElementById('total-return');
+            if (totalReturnElement) {
+                const totalReturn = parseFloat(data.total_return);
+                totalReturnElement.textContent = `${totalReturn > 0 ? '+' : ''}${totalReturn.toFixed(2)}%`;
+                totalReturnElement.classList.toggle('text-success', totalReturn > 0);
+                totalReturnElement.classList.toggle('text-danger', totalReturn < 0);
+            }
+
+            // Update win rate
+            const winRateElement = document.getElementById('win-rate');
+            if (winRateElement) {
+                winRateElement.textContent = `${(data.win_rate * 100).toFixed(1)}%`;
+            }
+
+            // Update max drawdown
+            const maxDrawdownElement = document.getElementById('max-drawdown');
+            if (maxDrawdownElement) {
+                maxDrawdownElement.textContent = `${data.max_drawdown.toFixed(2)}%`;
+            }
+
+            // Update Sharpe ratio
+            const sharpeRatioElement = document.getElementById('sharpe-ratio');
+            if (sharpeRatioElement) {
+                sharpeRatioElement.textContent = data.sharpe_ratio.toFixed(2);
+            }
+
+            // Update total trades
+            const totalTradesElement = document.getElementById('total-trades');
+            if (totalTradesElement) {
+                totalTradesElement.textContent = data.total_trades;
+            }
+        }
+
+        // Define refresh data function
+        function refreshData() {
+            loadStrategies();
+            loadTrades();
+            updateMarketData();
+        }
+        
+        // Update market data
+        function updateMarketData() {
+            $.get(`${API_BASE_URL}/api/market_data`, function(data) {
+                // Update market data in the UI
+                Object.keys(data).forEach(symbol => {
+                    const price = parseFloat(data[symbol]);
+                    const priceElement = document.querySelector(`#${symbol.toLowerCase()}_price`);
+                    if (priceElement) {
+                        priceElement.textContent = formatCurrency(price);
+                    }
+                });
+            });
+        }
+        
+        // Strategy subscription
+        function subscribeToStrategy(strategyId) {
+            socket.emit('subscribe_strategy', { strategy_id: strategyId });
+            
+            socket.on(`strategy_update_${strategyId}`, (data) => {
+                updateStrategyMetrics(strategyId, data);
+            });
+        }
+
+        // Auto-refresh data every 30 seconds
+        $(document).ready(function() {
+            refreshData();
+            setInterval(refreshData, 30000);
+            
+            // Initialize strategy subscriptions
+            const strategies = document.querySelectorAll('[data-strategy-id]');
+            strategies.forEach(strategy => {
+                const strategyId = strategy.dataset.strategyId;
+                subscribeToStrategy(strategyId);
+            });
+        });
+        
+        function createStrategyCard(strategy) {
+            const statusColors = {
+                'development': 'secondary',
+                'backtesting': 'info',
+                'paper_trading': 'warning',
+                'live': 'success'
+            };
+            
+            const timeframeColors = {
+                '1m': 'danger',
+                '3m': 'warning',
+                '5m': 'info',
+                '15m': 'primary',
+                '1h': 'success',
+                '4h': 'secondary'
+            };
+
+            return `
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="card strategy-card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <span class="badge bg-${statusColors[strategy.development_status]} status-badge">
+                                    ${strategy.development_status.replace('_', ' ')}
+                                </span>
+                                <button class="btn btn-link text-warning p-0 toggle-star" data-id="${strategy.id}">
+                                    <i class="bi bi-${strategy.is_starred ? 'star-fill' : 'star'} fs-5"></i>
+                                </button>
+                            </div>
+                            <h5 class="card-title">${strategy.name}</h5>
+                            <p class="card-text text-muted small">${strategy.description || 'No description available'}</p>
+                            <div class="mb-3">
+                                <span class="badge bg-${timeframeColors[strategy.timeframe]} timeframe-badge">
+                                    ${strategy.timeframe}
+                                </span>
+                                <span class="badge bg-dark">${strategy.symbol}</span>
+                            </div>
+                            ${strategy.backtesting_results ? `
+                                <div class="small text-muted mb-3">
+                                    <div><i class="bi bi-graph-up me-2"></i>Return: ${strategy.backtesting_results.total_return}%</div>
+                                    <div><i class="bi bi-calculator me-2"></i>Sharpe: ${strategy.backtesting_results.sharpe_ratio}</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="card-footer border-0">
+                            <button class="btn btn-sm ${strategy.is_active ? 'btn-danger' : 'btn-success'} toggle-strategy w-100" 
+                                    data-id="${strategy.id}">
+                                <i class="bi ${strategy.is_active ? 'bi-stop-circle' : 'bi-play-circle'} me-1"></i>
+                                ${strategy.is_active ? 'Stop' : 'Start'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createTradeRow(trade) {
+            const total = parseFloat(trade.total || 0);
+            const price = parseFloat(trade.price || 0);
+            const quantity = parseFloat(trade.quantity || 0);
+            
+            return `
+                <tr>
+                    <td>${trade.strategy_name || 'System'}</td>
+                    <td><span class="badge bg-dark">${trade.symbol}</span></td>
+                    <td>
+                        <span class="badge bg-${trade.side === 'BUY' ? 'success' : 'danger'}">
+                            ${trade.side}
+                        </span>
+                    </td>
+                    <td>$${price.toFixed(2)}</td>
+                    <td>$${price.toFixed(2)}</td>
+                    <td>${quantity.toFixed(4)}</td>
+                    <td>$${total.toFixed(2)}</td>
+                    <td>
+                        <span class="badge bg-${trade.status === 'FILLED' ? 'success' : 'warning'}">
+                            ${trade.status}
+                        </span>
+                    </td>
+                    <td>${trade.timestamp || 'N/A'}</td>
+                    <td>${trade.exit_time || 'N/A'}</td>
+                </tr>
+            `;
+        }
+
+        function loadStrategies() {
+            $.ajax({
+                url: `${API_BASE_URL}/api/strategies`,
+                method: 'GET',
+                success: function(strategies) {
+                    const strategiesContainer = $('#strategies-container');
+                    const starredContainer = $('#starred-strategies-container');
+                    
+                    strategiesContainer.empty();
+                    starredContainer.empty();
+                    
+                    const starredStrategies = strategies.filter(s => s.is_starred);
+                    const otherStrategies = strategies.filter(s => !s.is_starred);
+                    
+                    if (starredStrategies.length === 0) {
+                        starredContainer.append(`
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No starred strategies yet. Star your best strategies to see them here!
+                                </div>
+                            </div>
+                        `);
+                    } else {
+                        starredStrategies.forEach(strategy => {
+                            const card = createStrategyCard(strategy);
+                            starredContainer.append(card);
+                        });
+                    }
+                    
+                    otherStrategies.forEach(strategy => {
+                        const card = createStrategyCard(strategy);
+                        strategiesContainer.append(card);
+                    });
+                },
+                error: function(err) {
+                    console.error('Error loading strategies:', err);
+                    const message = `
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error loading strategies. Please try refreshing the page.
+                            </div>
+                        </div>
+                    `;
+                    $('#strategies-container').empty().append(message);
+                    $('#starred-strategies-container').empty().append(message);
+                }
+            });
+        }
+
+        function loadTrades() {
+            $.ajax({
+                url: `${API_BASE_URL}/api/trades`,
+                method: 'GET',
+                success: function(trades) {
+                    const tradesContainer = $('#trades-container');
+                    tradesContainer.empty();
+                    
+                    if (trades.length === 0) {
+                        tradesContainer.append(`
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No active positions or recent trades
+                                </td>
+                            </tr>
+                        `);
+                    } else {
+                        trades.forEach(trade => {
+                            const row = createTradeRow(trade);
+                            tradesContainer.append(row);
+                        });
+                    }
+                },
+                error: function(err) {
+                    console.error('Error loading trades:', err);
+                    const tradesContainer = $('#trades-container');
+                    tradesContainer.empty().append(`
+                        <tr>
+                            <td colspan="10" class="text-center text-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                Error loading trades data. Please try refreshing the page.
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+
+        $(document).on('click', '.toggle-star', function(e) {
+            e.preventDefault();
+            const strategyId = $(this).data('id');
+            const btn = $(this);
+            
+            $.ajax({
+                url: `${API_BASE_URL}/api/strategy/${strategyId}/star`,
+                method: 'POST',
+                success: function() {
+                    loadStrategies();
+                },
+                error: function(err) {
+                    console.error('Error toggling star:', err);
+                    const toast = $(`
+                        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                            <div class="toast" role="alert">
+                                <div class="toast-header bg-danger text-white">
+                                    <i class="bi bi-exclamation-circle me-2"></i>
+                                    <strong class="me-auto">Error</strong>
+                                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                                </div>
+                                <div class="toast-body">
+                                    Failed to update strategy star status.
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('body').append(toast);
+                    const bsToast = new bootstrap.Toast(toast.find('.toast'));
+                    bsToast.show();
+                }
+            });
+        });
+
+        $(document).on('click', '.toggle-strategy', function() {
+            const strategyId = $(this).data('id');
+            const btn = $(this);
+            btn.prop('disabled', true);
+            
+            $.ajax({
+                url: `${API_BASE_URL}/api/strategy/${strategyId}/toggle`,
+                method: 'POST',
+                success: function() {
+                    loadStrategies();
+                },
+                error: function(err) {
+                    console.error('Error toggling strategy:', err);
+                    btn.prop('disabled', false);
+                    // Show error toast
+                    const toast = $(`
+                        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                            <div class="toast" role="alert">
+                                <div class="toast-header bg-danger text-white">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong class="me-auto">Error</strong>
+                                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                                </div>
+                                <div class="toast-body">
+                                    Failed to toggle strategy. Please try again.
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('body').append(toast);
+                    const bsToast = new bootstrap.Toast(toast.find('.toast'));
+                    bsToast.show();
+                }
+            });
+        });
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connection-status');
+            if (statusElement) {
+                statusElement.textContent = status;
+                statusElement.className = status.toLowerCase();
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(value);
+        }
+
+        function formatPercentage(value) {
+            return (value * 100).toFixed(2) + '%';
+        }
+
+        // Strategy Evaluation Handlers
+        let currentEvaluationId = null;
+        
+        $('#evaluationForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            const symbols = $('#tradingPairs').val();
+            const timeframes = $('#timeframes').val();
+            const lookbackDays = $('#lookbackDays').val();
+            
+            // Clear previous results
+            $('#evaluationTableBody').empty();
+            $('#evaluationLogs').empty();
+            $('.progress-bar').css('width', '0%');
+            
+            // Start evaluation
+            $.ajax({
+                url: `${API_BASE_URL}/api/strategies/evaluate`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    symbols: symbols,
+                    timeframes: timeframes,
+                    lookback_days: parseInt(lookbackDays)
+                }),
+                success: function(response) {
+                    currentEvaluationId = response.task_id;
+                    addEvaluationLog('Evaluation started...');
+                },
+                error: function(err) {
+                    addEvaluationLog('Error starting evaluation: ' + err.responseJSON?.error);
+                }
+            });
+        });
+        
+        socket.on('strategy_evaluation', (data) => {
+            if (data.task_id !== currentEvaluationId) return;
+            
+            if (data.status === 'starting') {
+                addEvaluationLog(`Starting evaluation for ${data.symbol} ${data.timeframe}`);
+                updateEvaluationProgress();
+            }
+            else if (data.status === 'completed') {
+                addEvaluationResult(data);
+                addEvaluationLog(`Completed ${data.strategy_type} strategy for ${data.symbol} ${data.timeframe}`);
+                updateEvaluationProgress();
+            }
+            else if (data.status === 'error') {
+                addEvaluationLog('Error: ' + data.error);
+            }
+        });
+        
+        function addEvaluationResult(data) {
+            const results = data.results;
+            const row = `
+                <tr>
+                    <td>${data.symbol}</td>
+                    <td>${data.timeframe}</td>
+                    <td>${data.strategy_type}</td>
+                    <td>${formatPercentage(results.total_return)}</td>
+                    <td>${results.sharpe_ratio.toFixed(2)}</td>
+                    <td>${formatPercentage(results.win_rate)}</td>
+                    <td>${formatPercentage(results.max_drawdown)}</td>
+                    <td><span class="badge bg-success">Completed</span></td>
+                </tr>
+            `;
+            $('#evaluationTableBody').append(row);
+        }
+        
+        function addEvaluationLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const log = `<div>[${timestamp}] ${message}</div>`;
+            const logsDiv = $('#evaluationLogs');
+            logsDiv.append(log);
+            logsDiv.scrollTop(logsDiv[0].scrollHeight);
+        }
+        
+        function updateEvaluationProgress() {
+            const total = $('#tradingPairs').val().length * $('#timeframes').val().length * 3; // 3 strategy types
+            const completed = $('#evaluationTableBody tr').length;
+            const progress = (completed / total) * 100;
+            $('.progress-bar').css('width', `${progress}%`);
+        }
+        
+        // Strategy Recommendations Handlers
+        function refreshRecommendations() {
+            $.get(`${API_BASE_URL}/api/strategies/recommendations`, function(recommendations) {
+                const container = $('#recommendationsContainer');
+                container.empty();
+                
+                recommendations.forEach(strategy => {
+                    const card = `
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">${strategy.name}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">${strategy.symbol} ${strategy.timeframe}</h6>
+                                    <p class="card-text">${strategy.description}</p>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <small class="text-muted">Return</small>
+                                            <div>${formatPercentage(strategy.total_return)}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Sharpe</small>
+                                            <div>${strategy.sharpe_ratio.toFixed(2)}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Win Rate</small>
+                                            <div>${formatPercentage(strategy.win_rate)}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Max DD</small>
+                                            <div>${formatPercentage(strategy.max_drawdown)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-success btn-sm" onclick="deployStrategy(${strategy.id})">
+                                        Deploy Strategy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.append(card);
+                });
+            });
+        }
+        
+        // Load recommendations on page load
+        $(document).ready(function() {
+            refreshRecommendations();
+        });
+        
+        document.getElementById('evaluationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading spinner
+            document.getElementById('evaluationSpinner').style.display = 'block';
+            
+            // Disable evaluation button
+            document.getElementById('evaluateButton').disabled = true;
+            
+            // Get form data
+            const formData = {
+                trading_pairs: Array.from(document.getElementById('tradingPairs').selectedOptions).map(opt => opt.value),
+                timeframe: document.getElementById('timeframe').value,
+                lookback_period: parseInt(document.getElementById('lookbackPeriod').value),
+                strategies: Array.from(document.getElementById('strategies').selectedOptions).map(opt => opt.value)
+            };
+            
+            // Emit evaluation request
+            socket.emit('evaluate_strategies', formData);
+        });
+    </script>
+   <!-- Strategy Evaluation Modal -->
+   <div class="modal fade" id="evaluationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Evaluate Trading Strategies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="evaluationForm">
+                    <div class="mb-3">
+                        <label class="form-label">Trading Pairs</label>
+                        <select class="form-select" id="tradingPairs" multiple required>
+                            <option value="BTCUSDT">BTC/USDT</option>
+                            <option value="ETHUSDT">ETH/USDT</option>
+                            <option value="SOLUSDT">SOL/USDT</option>
+                            <option value="ADAUSDT">ADA/USDT</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Timeframes</label>
+                        <select class="form-select" id="timeframes" multiple required>
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="1d">1 Day</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Lookback Period (Days)</label>
+                        <input type="number" class="form-control" id="lookbackDays" value="60" min="1" max="365" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Start Evaluation</button>
+                </form>
+
+                <div class="mt-4">
+                    <h6>Evaluation Progress</h6>
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6>Results</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Timeframe</th>
+                                    <th>Strategy</th>
+                                    <th>Total Return</th>
+                                    <th>Sharpe Ratio</th>
+                                    <th>Win Rate</th>
+                                    <th>Max Drawdown</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evaluationTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6>Evaluation Logs</h6>
+                    <div id="evaluationLogs" class="border p-2" style="height: 150px; overflow-y: auto; font-family: monospace;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+</body>
+</html>
