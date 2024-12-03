@@ -1,37 +1,22 @@
-# Crypto Trading Bot
+# Cryptocurrency Trading Bot
 
-A sophisticated cryptocurrency trading bot that automates trading strategies across multiple exchanges.
+An advanced automated cryptocurrency trading bot with AI integration, capable of testing and implementing multiple trading strategies with robust risk management.
 
 ## Features
 
-- Real-time cryptocurrency price monitoring
-- Multiple trading strategy support
-- Exchange API integration (Binance, etc.)
-- Web interface for monitoring and control
-- Automated trading execution
-- Risk management system
-- Performance analytics
+- Modular strategy framework for easy strategy implementation
+- Historical and live market data handling
+- Backtesting and strategy optimization
+- AI-powered trading assistance
+- Paper trading and live trading capabilities
+- Comprehensive logging and performance monitoring
 
-## Project Structure
+## Setup
 
-```
-crypto_trading_bot/
-├── app.py                 # Main application entry point
-├── config/               # Configuration files
-├── strategies/           # Trading strategies implementation
-├── models/              # Data models
-├── templates/           # Web interface templates
-├── static/              # Static files (CSS, JS)
-├── utils/               # Utility functions
-└── tests/               # Test suite
-```
-
-## Installation
-
-1. Clone the repository:
+1. Create and activate a virtual environment:
 ```bash
-git clone https://github.com/[your-username]/crypto_trading_bot.git
-cd crypto_trading_bot
+python -m venv venv
+source venv/bin/activate  # On macOS/Linux
 ```
 
 2. Install dependencies:
@@ -39,45 +24,31 @@ cd crypto_trading_bot
 pip install -r requirements.txt
 ```
 
-3. Set up environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your API keys and configuration
+3. Create a `.env` file in the project root and add your Binance API credentials:
 ```
+BINANCE_API_KEY=your_api_key
+BINANCE_API_SECRET=your_api_secret
+```
+
+## Project Structure
+
+- `strategies/`: Trading strategy implementations
+  - `base_strategy.py`: Abstract base class for all strategies
+- `data_loader.py`: Market data retrieval and processing
+- `strategy_manager.py`: Strategy loading and management
+- `backtester.py`: Trade simulation and performance analysis
+- `ai_assistant.py`: AI-driven trading assistance
+- `executor.py`: Trade execution layer
+- `logger.py`: Comprehensive logging system
 
 ## Usage
 
-1. Start the bot:
-```bash
-python app.py
-```
-
-2. Access the web interface at `http://localhost:5000`
-
-## Configuration
-
-- Configure your API keys in `.env`
-- Adjust trading parameters in `config/trading_config.py`
-- Modify strategy settings in `config/strategy_config.py`
-
-## Trading Strategies
-
-The bot supports multiple trading strategies:
-
-1. Moving Average Crossover
-2. RSI-based trading
-3. Custom strategy implementation
-
-## Security
-
-- API keys are stored securely using environment variables
-- All sensitive data is encrypted
-- Regular security updates and dependency checks
+[Usage instructions will be added as components are implemented]
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
+2. Create a feature branch
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
@@ -85,7 +56,3 @@ The bot supports multiple trading strategies:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Disclaimer
-
-Trading cryptocurrencies involves substantial risk of loss. Use this bot at your own risk.
