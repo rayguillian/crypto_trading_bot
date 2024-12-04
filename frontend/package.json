@@ -1,21 +1,17 @@
 {
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
-  },
+  "name": "crypto-trading-bot-frontend",
+  "version": "1.0.0",
   "dependencies": {
-    "@emotion/react": "^11.13.5",
-    "@emotion/styled": "^11.13.5",
-    "@mui/material": "^5.16.8",
-    "@shadcn/ui": "^0.0.4",
-    "next": "^14.1.0",
+    "@radix-ui/react-tabs": "^1.0.4",
+    "@radix-ui/react-toast": "^1.1.4",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.263.1",
+    "next": "^13.4.19",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.5",
-    "@types/react": "^18.2.48",
-    "typescript": "^5.3.3"
+    "react-dom": "^18.2.0",
+    "recharts": "^2.7.2",
+    "tailwind-merge": "^1.14.0",
+    "tailwindcss-animate": "^1.0.6"
   }
 }
