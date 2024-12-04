@@ -1,46 +1,46 @@
-import logging
+import argparse
+import json
+import os
 from datetime import datetime, timedelta
-from strategies.moving_average_strategy import MovingAverageStrategy
-from core.strategy_evaluator import StrategyEvaluator
+from core.data import DataLoader
+from strategies.moving_average import MovingAverageStrategy
 
-# Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(f'logs/backtest_{datetime.now().strftime("%Y%m%d")}.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
-
-def main():
-    # Define evaluation period
+def run_backtest(strategy_name, symbol='BTCUSDT', interval='1h', days=30):
+    # Create data loader
+    data_loader = DataLoader()
+    
+    # Get historical data
     end_time = datetime.now()
-    start_time = end_time - timedelta(days=30)  # 1 month of data
+    start_time = end_time - timedelta(days=days)
     
-    # Trading pair and timeframe
-    symbol = 'BTCUSDT'
-    timeframe = '1h'
-    
-    # Create and run evaluator
-    evaluator = StrategyEvaluator(
-        strategy_class=MovingAverageStrategy,
-        symbol=symbol,
-        timeframe=timeframe,
-        start_time=start_time,
-        end_time=end_time,
-        save_dir="strategy_results",
-        min_sharpe=1.0,  # More lenient requirements for testing
-        min_profit_factor=1.2,
-        max_drawdown=0.25
+    data = data_loader.get_historical_data(
+        symbol,
+        interval,
+        start_time.strftime('%Y-%m-%d')
     )
     
-    try:
-        results = evaluator.evaluate_strategy()
-        logger.info(f"Backtest Results: {results}")
-    except Exception as e:
-        logger.error(f"Error during backtest: {str(e)}", exc_info=True)
+    # Initialize strategy
+    if strategy_name == 'MA':
+        strategy = MovingAverageStrategy()
+    else:
+        raise ValueError(f'Unknown strategy: {strategy_name}')
+    
+    # Run backtest
+    results = strategy.backtest(data)
+    
+    # Save results
+    results_dir = os.path.join('strategy_results', strategy_name)
+    os.makedirs(results_dir, exist_ok=True)
+    
+    with open(os.path.join(results_dir, f'{interval}_results.json'), 'w') as f:
+        json.dump(results, f)
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--strategy', required=True, help='Strategy name')
+    parser.add_argument('--symbol', default='BTCUSDT', help='Trading pair')
+    parser.add_argument('--interval', default='1h', help='Timeframe')
+    parser.add_argument('--days', type=int, default=30, help='Backtest period in days')
+    
+    args = parser.parse_args()
+    run_backtest(args.strategy, args.symbol, args.interval, args.days)
